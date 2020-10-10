@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import $ from 'jquery';
-
+import serverBaseUrl from '../serverBaseUrl'
 import '../stylesheets/QuizView.css';
 
 const questionsPerPlay = 5; 
@@ -12,7 +12,7 @@ class QuizView extends Component {
         quizCategory: null,
         previousQuestions: [], 
         showAnswer: false,
-        categories: {},
+        categories: [],
         numCorrect: 0,
         currentQuestion: {},
         guess: '',
@@ -22,7 +22,7 @@ class QuizView extends Component {
 
   componentDidMount(){
     $.ajax({
-      url: `/categories`, //TODO: update request URL
+      url: serverBaseUrl+`/categories`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({ categories: result.categories })
@@ -35,8 +35,8 @@ class QuizView extends Component {
     })
   }
 
-  selectCategory = ({type, id=0}) => {
-    this.setState({quizCategory: {type, id}}, this.getNextQuestion)
+  selectCategory = (id) => {
+    this.setState({quizCategory: id}, this.getNextQuestion)
   }
 
   handleChange = (event) => {
@@ -48,7 +48,7 @@ class QuizView extends Component {
     if(this.state.currentQuestion.id) { previousQuestions.push(this.state.currentQuestion.id) }
 
     $.ajax({
-      url: '/quizzes', //TODO: update request URL
+      url: serverBaseUrl+'/quizzes', //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -104,15 +104,15 @@ class QuizView extends Component {
           <div className="quiz-play-holder">
               <div className="choose-header">Choose Category</div>
               <div className="category-holder">
-                  <div className="play-category" onClick={this.selectCategory}>ALL</div>
-                  {Object.keys(this.state.categories).map(id => {
+                  <div className="play-category" onClick={()=>this.selectCategory(0)}>ALL</div>
+                  {this.state.categories.map(cat => {
                   return (
                     <div
-                      key={id}
-                      value={id}
+                      key={cat.id}
+                      value={cat.id}
                       className="play-category"
-                      onClick={() => this.selectCategory({type:this.state.categories[id], id})}>
-                      {this.state.categories[id]}
+                      onClick={() => this.selectCategory(cat.id)}>
+                      {cat.type}
                     </div>
                   )
                 })}
@@ -167,7 +167,8 @@ class QuizView extends Component {
 
 
   render() {
-    return this.state.quizCategory
+    console.log(this.state)
+    return this.state.quizCategory!==null
         ? this.renderPlay()
         : this.renderPrePlay()
   }

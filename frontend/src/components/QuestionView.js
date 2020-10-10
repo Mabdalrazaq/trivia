@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-
+import serverBaseUrl from '../serverBaseUrl';
 import '../stylesheets/App.css';
 import Question from './Question';
 import Search from './Search';
@@ -12,8 +12,9 @@ class QuestionView extends Component {
       questions: [],
       page: 1,
       totalQuestions: 0,
-      categories: {},
+      categories: [],
       currentCategory: null,
+      searchTerm:''
     }
   }
 
@@ -21,9 +22,14 @@ class QuestionView extends Component {
     this.getQuestions();
   }
 
+  getAll= async()=>{
+    await this.setState({searchTerm:'',currentCategory:null});
+    this.getQuestions();
+  }
+
   getQuestions = () => {
     $.ajax({
-      url: `/questions?page=${this.state.page}`, //TODO: update request URL
+      url: serverBaseUrl+`/questions?page=${this.state.page}&search_term=${this.state.searchTerm}&current_category=${this.state.currentCategory}`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({
@@ -35,6 +41,7 @@ class QuestionView extends Component {
       },
       error: (error) => {
         alert('Unable to load questions. Please try your request again')
+        alert(JSON.stringify(error))
         return;
       }
     })
@@ -60,13 +67,14 @@ class QuestionView extends Component {
 
   getByCategory= (id) => {
     $.ajax({
-      url: `/categories/${id}/questions`, //TODO: update request URL
+      url: serverBaseUrl+`/categories/${id}/questions`, //TODO: update request URL
       type: "GET",
       success: (result) => {
         this.setState({
           questions: result.questions,
           totalQuestions: result.total_questions,
-          currentCategory: result.current_category })
+          currentCategory: result.current_category,
+          searchTerm: ''})
         return;
       },
       error: (error) => {
@@ -78,7 +86,7 @@ class QuestionView extends Component {
 
   submitSearch = (searchTerm) => {
     $.ajax({
-      url: `/questions`, //TODO: update request URL
+      url: serverBaseUrl+`/questions`, //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -91,7 +99,9 @@ class QuestionView extends Component {
         this.setState({
           questions: result.questions,
           totalQuestions: result.total_questions,
-          currentCategory: result.current_category })
+          currentCategory: result.current_category,
+          searchTerm:searchTerm,
+          currentCategory:null })
         return;
       },
       error: (error) => {
@@ -105,7 +115,7 @@ class QuestionView extends Component {
     if(action === 'DELETE') {
       if(window.confirm('are you sure you want to delete the question?')) {
         $.ajax({
-          url: `/questions/${id}`, //TODO: update request URL
+          url: serverBaseUrl+`/questions/${id}`, //TODO: update request URL
           type: "DELETE",
           success: (result) => {
             this.getQuestions();
@@ -123,12 +133,12 @@ class QuestionView extends Component {
     return (
       <div className="question-view">
         <div className="categories-list">
-          <h2 onClick={() => {this.getQuestions()}}>Categories</h2>
+          <h2 onClick={() => {this.getAll()}}>Categories</h2>
           <ul>
-            {Object.keys(this.state.categories).map((id, ) => (
-              <li key={id} onClick={() => {this.getByCategory(id)}}>
-                {this.state.categories[id]}
-                <img className="category" src={`${this.state.categories[id]}.svg`}/>
+            {this.state.categories.map(category => (
+              <li key={category.id} onClick={() => {this.getByCategory(category.id)}}>
+                {category.type}
+                <img className="category" src={`${category.type}.svg`}/>
               </li>
             ))}
           </ul>
@@ -136,12 +146,12 @@ class QuestionView extends Component {
         </div>
         <div className="questions-list">
           <h2>Questions</h2>
-          {this.state.questions.map((q, ind) => (
+          {this.state.questions.map(q => (
             <Question
               key={q.id}
               question={q.question}
               answer={q.answer}
-              category={this.state.categories[q.category]} 
+              category={this.state.categories.find(cat=>cat.id===q.category).type} 
               difficulty={q.difficulty}
               questionAction={this.questionAction(q.id)}
             />

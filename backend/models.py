@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 
 database_name = "trivia"
-database_path = "postgres://{}/{}".format('localhost:5432', database_name)
+database_path = "postgresql://postgres:postgres@{}/{}".format('localhost:5432', database_name)
 
 db = SQLAlchemy()
 
@@ -17,11 +17,9 @@ def setup_db(app, database_path=database_path):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
     db.init_app(app)
-    db.create_all()
 
 '''
 Question
-
 '''
 class Question(db.Model):  
   __tablename__ = 'questions'
@@ -29,7 +27,7 @@ class Question(db.Model):
   id = Column(Integer, primary_key=True)
   question = Column(String)
   answer = Column(String)
-  category = Column(String)
+  category = Column(Integer)
   difficulty = Column(Integer)
 
   def __init__(self, question, answer, category, difficulty):
